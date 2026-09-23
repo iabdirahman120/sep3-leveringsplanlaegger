@@ -6,16 +6,16 @@ Denne mappe rummer planlægningsmaterialet til et SEP3-semesterprojekt (VIA, Sof
 
 1. `docs/sep3-krav.md`: de 15 krav fra VIA. De vinder over alt andet.
 2. `docs/projektforslag-vejledere.md`: det aktuelle forslag (arkitektur, afgrænsning, teknologivalg).
-3. `docs/second-opinion-architecture.md`: hvorfor forslaget ser ud som det gør.
-4. `reference/jlr-architecture/`: dokumentation for det eksisterende Next.js-system, som domænet er lånt fra.
+3. Second opinion paa arkitekturen ligger lokalt, uden for repoet.
+4. Referencedokumentationen ligger lokalt i `~/Downloads/sep3-reference-lokal/jlr-architecture` og er bevidst holdt ude af repoet, fordi den er ZNG-materiale.
 
 ## Hårde regler
 
 - Systemet skal bruge **både Java og C#**. Java: domæneserver (Spring Boot, gRPC, JPA). C#: Blazor-klient og ASP.NET Core app-server.
-- **Genbrug ingen kode** fra `reference/`. Kun idé, datamodel og forretningsregler. `order-status.ts.txt` er læsestof.
+- **Genbrug ingen kode** fra referencematerialet. Kun idé, datamodel og forretningsregler. `order-status.ts.txt` er læsestof.
 - Statusmaskine, ejerskabstjek og lagerregler ligger i **Java**, i samme transaktion som skrivningen. Dubler dem ikke i C#.
 - Fravalgt og skal ikke foreslås igen: RabbitMQ, GraphQL, .NET MAUI, SMS/e-mail-notifikationer, ruteoptimering, ERP-integration. Begrundelser står i second opinion afsnit 3, 4 og 8.
-- Påstande om det eksisterende system skal henvise til fil og afsnit i `reference/jlr-architecture/`. Kan noget ikke findes der, skriv UVERIFICERET.
+- Påstande om det eksisterende system skal henvise til fil og afsnit i den lokale referencemappe. Kan noget ikke findes der, skriv UVERIFICERET.
 
 ## Sprog og form
 

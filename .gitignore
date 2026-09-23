@@ -35,3 +35,6 @@ docker/pgdata/
 
 # macOS
 .DS_Store
+
+# ZNG-materiale. Ligger kun lokalt i ~/Downloads/sep3-reference-lokal
+reference/

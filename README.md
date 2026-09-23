@@ -36,8 +36,8 @@ Begrundelserne står i `docs/projektforslag-vejledere.md` afsnit 5 og 7.
 | `domain/` | Java | Spring Boot domæneserver, gRPC og JPA |
 | `proto/` | | Delte gRPC-kontrakter. Skrives før implementering |
 | `docker/` | | docker-compose med PostgreSQL |
-| `docs/` | | Krav, projektforslag og arkitektur-second-opinion |
-| `reference/` | | Dokumentation for et eksisterende system i samme domæne |
+| `docs/` | | Krav, projektbeskrivelse og projektforslag |
+
 
 ## Kom i gang
 
@@ -68,3 +68,11 @@ GitHub Issues og GitHub Projects i dette repo, så proces og kode ligger samme s
 | `demo.txt` | Link til demovideo, højst 3 minutter (krav 15) |
 
 Alle 15 krav står i `docs/sep3-krav.md`.
+
+## Referencemateriale
+
+Dokumentationen for det eksisterende system i samme domæne er ZNG's materiale
+og ligger derfor **ikke** i dette repo. Den findes kun lokalt i
+`~/Downloads/sep3-reference-lokal/jlr-architecture`.
+
+Kun idé, datamodel og forretningsregler genbruges. Ingen kode.
