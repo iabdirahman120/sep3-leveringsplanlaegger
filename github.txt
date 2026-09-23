@@ -1,1 +1,1 @@
-Udfyldes før aflevering. Krav 14: link til dette repo paa GitHub.
+https://github.com/iabdirahman120/sep3-leveringsplanlaegger
