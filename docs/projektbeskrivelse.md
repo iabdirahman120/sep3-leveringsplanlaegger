@@ -2,8 +2,8 @@
 
 **Titel:** Leveringsplanlægger, leveringskoordinering for en forhandler med flere lagre
 **Uddannelse:** VIA University College, Software Engineering, 3. semester
-**Gruppe:** _[navne og studienumre udfyldes]_
-**Vejledere:** _[udfyldes]_
+**Studerende:** Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26
+**Vejledere:** Jakob Trigger Knop og Surayya Urazimbetova
 **Dato:** 2026-09-23
 **Kildekode:** https://github.com/iabdirahman120/sep3-leveringsplanlaegger
 
@@ -27,9 +27,11 @@ Det giver tre konkrete problemer:
 - **Intet overblik.** Disponenten kan ikke se belastning pr. chauffør eller
   pr. lager, og opdager først en forsinkelse, når kunden ringer.
 
-Domænet er hentet fra et reelt behov, som et gruppemedlem har arbejdet med.
-Systemet bygges fra bunden i Java og C#. Vi genbruger problemforståelsen,
-datamodellen og forretningsreglerne, men ingen kode.
+Domænet er hentet fra et reelt behov, jeg selv har arbejdet med. Systemet
+bygges fra bunden i Java og C#. Jeg genbruger problemforståelsen, datamodellen
+og forretningsreglerne, men ingen kode.
+
+Projektet laves af én person.
 
 ## 2. Aktører
 
@@ -104,7 +106,7 @@ Database         PostgreSQL i Docker
 Java ejer databasen, inklusive brugere og sessioner. C# ejer session-cookien,
 REST-kontrakten, validering af input og dashboard-tallene.
 
-### Tre beslutninger vi vil forsvare
+### Tre beslutninger jeg vil forsvare
 
 **Statusmaskinen ligger i Java, i samme transaktion som skrivningen.**
 Afgørelsen "må denne bruger flytte denne ordre" gælder kun det øjebliksbillede,
@@ -131,23 +133,31 @@ token uden databaseopslag ikke levere.
 | Samtidighed | Optimistisk låsning | Pessimistisk lås | Beskytter også mod at klienten handlede på et forældet billede |
 | Regler | I Java, i transaktionen | Dubleret i C# | Én kilde til sandhed |
 
-Gruppen har dokumentation for et kørende system i samme domæne, bygget
-serverløst på Cloudflare. Dets kendte begrænsninger, blandt andet manglende
-interaktive transaktioner, bruges i rapporten som alternativer med målte
-konsekvenser i stedet for hypoteser.
+Jeg har dokumentation for et kørende system i samme domæne, bygget serverløst
+på Cloudflare. Dets kendte begrænsninger, blandt andet manglende interaktive
+transaktioner, bruges i rapporten som alternativer med målte konsekvenser i
+stedet for hypoteser.
 
 ## 7. Metode og plan
 
-**Scrum** med sprints på to uger. Product backlog, sprint backlog og burndown
-føres som GitHub Issues og GitHub Projects i det repo, `github.txt` peger på,
-så proces og kode ligger samme sted.
+**Kanban**, fordi projektet laves af én person. Scrum bygger på et team med
+roller og daglige møder, og det ville være en tom ceremoni her. Board og
+opgaver føres som GitHub Issues og GitHub Projects i det repo, `github.txt`
+peger på, så proces og kode ligger samme sted.
 
-| Sprint | Mål |
+| Element | Sådan |
 |---|---|
-| 1 | `.proto` og REST-kontrakt skrevet. docker-compose kører. Skema oprettet |
-| 2 | Gående skelet: login og ordreliste virker end-to-end gennem alle tre processer |
-| 3 til 5 | Lodrette skiver: én funktion gennem alle lag ad gangen |
-| 6 | Rapport, demovideo og aflevering |
+| Board | Backlog, I gang, Test, Færdig. Højst to opgaver i gang ad gangen |
+| Opgaver | Hvert punkt i afsnit 3 bliver et eller flere kort |
+| Ugentligt | Fast gennemgang mandag: hvad blev færdigt, hvad blokerer |
+| Versionsstyring | Git fra første dag, commits undervejs frem for få store |
+
+| Milepæl | Indhold |
+|---|---|
+| M1 | `.proto` og REST-kontrakt skrevet. docker-compose kører. Skema oprettet |
+| M2 | Gående skelet: login og ordreliste virker end-to-end gennem alle tre processer |
+| M3 til M5 | Lodrette skiver: én funktion gennem alle lag ad gangen |
+| M6 | Rapport, demovideo og aflevering |
 
 **Definition of Done:** enhedstest af hele overgangstabellen uden database,
 integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
@@ -156,7 +166,7 @@ integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
 
 | Krav | Hvordan |
 |---|---|
-| 1 Metode | Scrum, artefakter i GitHub Projects |
+| 1 Metode | Kanban, board og issues i GitHub Projects |
 | 2 Domæne | Dette dokument |
 | 3 Versionskontrol | Git fra første commit, se link øverst |
 | 4 Distribueret | Tre processer, hver sin maskine mulig |
@@ -174,7 +184,7 @@ integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
 |---|---|
 | Rapport | 8 til 12 sider ekskl. bilag. Arkitektur på højst tre sider |
 | Kildekode | Hele repoet som .zip |
-| `github.txt` | Link til repoet, som også rummer Scrum-artefakterne |
+| `github.txt` | Link til repoet, som også rummer Kanban-boardet |
 | `demo.txt` | Link til video på højst tre minutter |
 
 Videoen viser: login i begge roller, opret og tildel ordre, chauffør leverer fra
@@ -186,10 +196,11 @@ hændelse, og logs fra begge servere står side om side.
 
 | Risiko | Modtræk |
 |---|---|
-| Tre kodebaser integreres først til sidst | Gående skelet i sprint 2, derefter lodrette skiver |
+| Tre kodebaser integreres først til sidst | Gående skelet ved M2, derefter lodrette skiver |
 | Regler driver fra hinanden i C# og Java | Overgangstabellen findes kun i Java |
 | Domænet ender som simpel CRUD | Statusmaskine, ejerskab, låsning og audit er kernen |
 | Scope vokser | Afsnit 4 er kontrakten. Strækmål først når alt i afsnit 3 er i videoen |
+| For stort omfang for én person | Afsnit 3 er minimum. gRPC-streaming og live dashboard er strækmål og ryger først |
 
 ## 11. Spørgsmål til vejlederne
 
