@@ -1,0 +1,262 @@
+syntax = "proto3";
+
+package delivery.v1;
+
+option java_package = "dk.via.sep3.delivery.grpc";
+option java_multiple_files = true;
+option csharp_namespace = "Delivery.V1";
+
+// Kontrakten mellem C#-app-serveren og Java-domaeneserveren.
+//
+// To ting goer denne kontrakt anderledes end et almindeligt CRUD-API, og
+// begge er bevidste:
+//
+// 1. Ingen RPC tager et actor-id. C# sender session-id i gRPC-metadata under
+//    noeglen "x-session-id", og Java slaar selv op hvem der handler. Java
+//    stoler dermed ikke paa C#'s paastand om identitet, kun paa transporten.
+//    Uden det kunne enhver med adgang til gRPC-porten paastaa at vaere admin.
+//
+// 2. Enhver skrivning paa en ordre baerer expected_version. Klienten tegnede
+//    knapper paa et oejebliksbillede, og versionen foelger med hele vejen
+//    tilbage. Er ordren aendret undervejs, svarer Java ABORTED, og brugeren
+//    bliver bedt om at genindlaese.
+
+// ---------------------------------------------------------------- statuser
+
+// De syv tilstande. Overgangstabellen ligger i Java og findes kun der.
+// C# kalder GetAllowedTransitions og tegner knapper ud fra svaret.
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_ASSIGNED = 2;
+  ORDER_STATUS_PICKED_UP = 3;
+  ORDER_STATUS_IN_TRANSIT = 4;
+  ORDER_STATUS_DELIVERED = 5;
+  // Ikke en sluttilstand. En mislykket levering er normal i hvidevare-
+  // logistik og skal kunne planlaegges igen uden at historikken gaar tabt.
+  ORDER_STATUS_FAILED = 6;
+  ORDER_STATUS_CANCELLED = 7;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_DISPATCHER = 1;
+  ROLE_DRIVER = 2;
+}
+
+// ------------------------------------------------------------------ typer
+
+message User {
+  string id = 1;
+  string username = 2;
+  string display_name = 3;
+  Role role = 4;
+  // Chauffoerer hoerer til ét lager. Disponenter ser alle.
+  string warehouse_id = 5;
+  bool is_active = 6;
+}
+
+message OrderItem {
+  string product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+}
+
+message Order {
+  string id = 1;
+  OrderStatus status = 2;
+  string warehouse_id = 3;
+  string customer_id = 4;
+  string assigned_driver_id = 5;
+  repeated OrderItem items = 6;
+  string delivery_window_start = 7;  // RFC 3339
+  string delivery_window_end = 8;    // RFC 3339
+  string created_at = 9;
+  // Optimistisk laasning. Ekkoes af klienten ved enhver skrivning.
+  int64 version = 10;
+}
+
+// Append-only. Entiteten i Java har ingen settere og ingen update-sti.
+message OrderEvent {
+  string id = 1;
+  string order_id = 2;
+  string actor_id = 3;
+  string actor_display_name = 4;
+  OrderStatus from_status = 5;
+  OrderStatus to_status = 6;
+  string note = 7;
+  string occurred_at = 8;
+}
+
+message DeliveryProof {
+  string order_id = 1;
+  string received_by = 2;
+  string recorded_at = 3;
+}
+
+// ------------------------------------------------------------------- auth
+
+service AuthService {
+  // Eneste RPC der tager legitimation i selve beskeden. Der er endnu ingen
+  // session at sende i metadata. Rate limit paa login ligger i C#.
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  // C# kalder denne paa hvert request for at oversaette cookie til bruger.
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  // Sessioner er en tabel, ikke et JWT. En deaktiveret chauffoer skal vaere
+  // logget ud ved naeste request, og det kan et signeret token uden opslag
+  // ikke levere.
+  string session_id = 1;
+  User user = 2;
+  string expires_at = 3;
+}
+
+message LogoutRequest {}
+message LogoutResponse {}
+
+message GetCurrentUserRequest {}
+message GetCurrentUserResponse {
+  User user = 1;
+}
+
+// ------------------------------------------------------------------ ordrer
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  // Java filtrerer selv. En chauffoer faar kun egne ordrer, uanset hvad
+  // C# beder om.
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  // Driver knapperne i brugerfladen. Serveren gentjekker altid i
+  // TransitionOrder, saa svaret her er en hjaelp, ikke en garanti.
+  rpc GetAllowedTransitions(GetAllowedTransitionsRequest) returns (GetAllowedTransitionsResponse);
+  rpc TransitionOrder(TransitionOrderRequest) returns (Order);
+  rpc AssignDriver(AssignDriverRequest) returns (Order);
+}
+
+message CreateOrderRequest {
+  string warehouse_id = 1;
+  string customer_id = 2;
+  repeated OrderItem items = 3;
+  string delivery_window_start = 4;
+  string delivery_window_end = 5;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetOrderResponse {
+  Order order = 1;
+  repeated OrderEvent timeline = 2;
+  DeliveryProof proof = 3;
+}
+
+message ListOrdersRequest {
+  // Tomme felter betyder ingen filtrering. Adgangskontrol sker uanset.
+  repeated OrderStatus statuses = 1;
+  string warehouse_id = 2;
+  int32 page_size = 3;
+  string page_token = 4;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  string next_page_token = 2;
+}
+
+message GetAllowedTransitionsRequest {
+  string order_id = 1;
+}
+
+message GetAllowedTransitionsResponse {
+  repeated OrderStatus allowed = 1;
+  // Sandt naar overgangen til DELIVERED kraever modtagers navn.
+  bool requires_delivery_proof = 2;
+}
+
+message TransitionOrderRequest {
+  string order_id = 1;
+  OrderStatus to_status = 2;
+  // Skal vaere versionen klienten tegnede knapperne paa. Er den forael-
+  // det, svarer Java ABORTED og skrivningen sker ikke.
+  int64 expected_version = 3;
+  // Kraevet naar to_status er DELIVERED.
+  string received_by = 4;
+  string note = 5;
+}
+
+message AssignDriverRequest {
+  string order_id = 1;
+  string driver_id = 2;
+  int64 expected_version = 3;
+}
+
+// ------------------------------------------------------------------ brugere
+
+service UserService {
+  rpc ListDrivers(ListDriversRequest) returns (ListDriversResponse);
+  // Én transaktion i Java: saet is_active falsk, slet sessioner, og frigiv
+  // ordrer der stod som assigned til chauffoeren.
+  rpc DeactivateDriver(DeactivateDriverRequest) returns (DeactivateDriverResponse);
+}
+
+message ListDriversRequest {
+  // Tildeling kraever at chauffoeren hoerer til ordrens lager.
+  string warehouse_id = 1;
+  bool only_active = 2;
+}
+
+message ListDriversResponse {
+  repeated User drivers = 1;
+}
+
+message DeactivateDriverRequest {
+  string driver_id = 1;
+}
+
+message DeactivateDriverResponse {
+  int32 sessions_deleted = 1;
+  repeated string released_order_ids = 2;
+}
+
+// --------------------------------------------------------------- dashboard
+
+service DashboardService {
+  rpc GetCounters(GetCountersRequest) returns (GetCountersResponse);
+
+  // Straekmaal, ikke MVP. Erstatter RabbitMQ: order_events flyder live til
+  // aabne dashboards uden broker. Java udsender et internt ApplicationEvent
+  // pr. skrevet order_event, som denne stream laeser fra.
+  rpc SubscribeOrderEvents(SubscribeOrderEventsRequest) returns (stream OrderEvent);
+}
+
+message GetCountersRequest {
+  string warehouse_id = 1;
+}
+
+message DriverLoad {
+  string driver_id = 1;
+  string display_name = 2;
+  int32 active_orders = 3;
+}
+
+message GetCountersResponse {
+  int32 unassigned = 1;
+  int32 overdue = 2;
+  int32 in_transit = 3;
+  int32 delivered_today = 4;
+  repeated DriverLoad load_per_driver = 5;
+}
+
+message SubscribeOrderEventsRequest {
+  string warehouse_id = 1;
+}

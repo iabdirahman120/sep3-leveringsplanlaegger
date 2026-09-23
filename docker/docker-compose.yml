@@ -1,0 +1,28 @@
+# Udviklingsopsaetning. Databasen koerer i Docker fra dag ét, saa alle i
+# gruppen skriver mod samme skema og samme version af PostgreSQL.
+#
+# Javas gRPC-port publiceres med vilje ikke ud af netvaerket naar de tre
+# processer selv flytter ind i compose. Kun C#-app-serveren skal kunne naa
+# den. Indtil da er 9090 aaben, saa domaeneserveren kan koeres fra IDE'en.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sep3-db
+    environment:
+      POSTGRES_DB: delivery
+      POSTGRES_USER: delivery
+      # Kun til udvikling. Produktionsvaerdier hoerer ikke i git.
+      POSTGRES_PASSWORD: delivery
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delivery -d delivery"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
