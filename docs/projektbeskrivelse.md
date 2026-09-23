@@ -1,15 +1,12 @@
 # Projektbeskrivelse, SEP3
 
-**Titel:** Leveringsplanlægger, leveringskoordinering for en forhandler med flere lagre
+**Titel:** Leveringsplanlægger
+**Undertitel:** Leveringskoordinering for en forhandler med flere lagre
 **Uddannelse:** VIA University College, Software Engineering, 3. semester
 **Studerende:** Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26
 **Vejledere:** Jakob Trigger Knop og Surayya Urazimbetova
-**Dato:** 2026-09-23
+**Dato:** 23. september 2026
 **Kildekode:** https://github.com/iabdirahman120/sep3-leveringsplanlaegger
-
-Dette dokument beder om godkendelse af domænet, jævnfør krav 2. Den fulde
-arkitekturbegrundelse ligger i `projektforslag-vejledere.md`, og kritikken der
-formede den i `second-opinion-architecture.md`.
 
 ---
 
@@ -140,24 +137,37 @@ stedet for hypoteser.
 
 ## 7. Metode og plan
 
-**Kanban**, fordi projektet laves af én person. Scrum bygger på et team med
-roller og daglige møder, og det ville være en tom ceremoni her. Board og
-opgaver føres som GitHub Issues og GitHub Projects i det repo, `github.txt`
-peger på, så proces og kode ligger samme sted.
+**Scrum** med sprints på to uger. Product backlog, sprint backlog og burndown
+føres som GitHub Issues og GitHub Projects i det repo, `github.txt` peger på,
+så proces og kode ligger samme sted.
+
+Projektet laves af én person, og det skal Scrum tilpasses uden at blive tom
+ceremoni. Rollerne product owner, scrum master og udvikler falder sammen i mig,
+og der er derfor ingen daglige møder. Det følgende holdes:
 
 | Element | Sådan |
 |---|---|
-| Board | Backlog, I gang, Test, Færdig. Højst to opgaver i gang ad gangen |
-| Opgaver | Hvert punkt i afsnit 3 bliver et eller flere kort |
-| Ugentligt | Fast gennemgang mandag: hvad blev færdigt, hvad blokerer |
-| Versionsstyring | Git fra første dag, commits undervejs frem for få store |
+| Product backlog | Hvert krav i afsnit 6 bliver et eller flere issues, prioriteret |
+| Sprint planning | Første mandag i sprinten. Sprint backlog vælges og fryses |
+| Sprint backlog | Eget board i GitHub Projects pr. sprint. Højst to issues i gang ad gangen |
+| Daily | Erstattet af en kort skriftlig log mandag, onsdag og fredag: hvad blev færdigt, hvad blokerer |
+| Sprint review | Ved sprintens slutning. Det færdige vises, og vejledermøder bruges som review med interessent |
+| Retrospektiv | Skrives ned efter hver sprint, tre linjer: behold, stop, prøv |
+| Burndown | Genereres fra GitHub Projects og gemmes som skærmbillede ved hver sprintafslutning |
 
-| Milepæl | Indhold |
-|---|---|
-| M1 | `.proto` og REST-kontrakt skrevet. docker-compose kører. Skema oprettet |
-| M2 | Gående skelet: login og ordreliste virker end-to-end gennem alle tre processer |
-| M3 til M5 | Lodrette skiver: én funktion gennem alle lag ad gangen |
-| M6 | Rapport, demovideo og aflevering |
+Afvigelserne fra ren Scrum, altså de manglende roller og det manglende daglige
+møde, skrives ind i rapportens metodeafsnit med begrundelse.
+
+| Sprint | Slutter | Mål |
+|---|---|---|
+| 1 | 8/10 | Arkitektur afleveret: C1, C2, C3 og datamodel. `.proto` og REST-kontrakt færdige. docker-compose kører |
+| 2 | 22/10 | Gående skelet: login og ordreliste virker end-to-end gennem alle tre processer |
+| 3 | 5/11 | Opret ordre med lagertjek, tildel chauffør, statusmaskine og audit-log |
+| 4 | 19/11 | Chaufførvisning på telefon, leveringsbevis, dashboard med roller, deaktivering |
+| 5 | 3/12 | Test, samtidighedstest optaget, dokumentation |
+| 6 | Efter aftale | Rapport, kildekode, GitHub-link og videodemonstration |
+
+Sprint 1 er lagt, så den slutter på arkitekturfristen 8. oktober.
 
 **Definition of Done:** enhedstest af hele overgangstabellen uden database,
 integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
@@ -166,7 +176,7 @@ integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
 
 | Krav | Hvordan |
 |---|---|
-| 1 Metode | Kanban, board og issues i GitHub Projects |
+| 1 Metode | Scrum, backlog og sprints i GitHub Projects |
 | 2 Domæne | Dette dokument |
 | 3 Versionskontrol | Git fra første commit, se link øverst |
 | 4 Distribueret | Tre processer, hver sin maskine mulig |
@@ -184,7 +194,7 @@ integrationstest af gRPC-kontrakten, og e2e-test af de tre vigtigste flows.
 |---|---|
 | Rapport | 8 til 12 sider ekskl. bilag. Arkitektur på højst tre sider |
 | Kildekode | Hele repoet som .zip |
-| `github.txt` | Link til repoet, som også rummer Kanban-boardet |
+| `github.txt` | Link til repoet, som også rummer Scrum-artefakterne |
 | `demo.txt` | Link til video på højst tre minutter |
 
 Videoen viser: login i begge roller, opret og tildel ordre, chauffør leverer fra
@@ -196,7 +206,7 @@ hændelse, og logs fra begge servere står side om side.
 
 | Risiko | Modtræk |
 |---|---|
-| Tre kodebaser integreres først til sidst | Gående skelet ved M2, derefter lodrette skiver |
+| Tre kodebaser integreres først til sidst | Gående skelet i sprint 2, derefter lodrette skiver |
 | Regler driver fra hinanden i C# og Java | Overgangstabellen findes kun i Java |
 | Domænet ender som simpel CRUD | Statusmaskine, ejerskab, låsning og audit er kernen |
 | Scope vokser | Afsnit 4 er kontrakten. Strækmål først når alt i afsnit 3 er i videoen |
