@@ -5,7 +5,7 @@
 **Uddannelse:** VIA University College, Software Engineering, 3. semester
 **Studerende:** Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26
 **Vejledere:** Jakob Trigger Knop og Surayya Urazimbetova
-**Virksomhed:** ZNG, kontaktperson Andreas Mortensen
+**Virksomhed:** ZNG, kontaktperson Abdiqani Mohamud
 **Dato:** 23. september 2026
 **Kildekode:** https://github.com/iabdirahman120/sep3-leveringsplanlaegger
 
