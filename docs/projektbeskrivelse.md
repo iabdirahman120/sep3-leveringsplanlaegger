@@ -5,6 +5,7 @@
 **Uddannelse:** VIA University College, Software Engineering, 3. semester
 **Studerende:** Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26
 **Vejledere:** Jakob Trigger Knop og Surayya Urazimbetova
+**Virksomhed:** ZNG, kontaktperson Andreas Mortensen
 **Dato:** 23. september 2026
 **Kildekode:** https://github.com/iabdirahman120/sep3-leveringsplanlaegger
 
@@ -28,7 +29,7 @@ mod påstand.
 **Intet overblik.** Disponenten kan ikke se belastningen pr. chauffør eller
 pr. lager og opdager først en forsinkelse, når kunden ringer.
 
-Domænet er hentet fra et reelt behov, jeg selv har arbejdet med. Systemet
+Domænet er hentet fra et reelt behov, jeg har arbejdet med gennem ZNG. Systemet
 bygges fra bunden i Java og C#. Jeg genbruger problemforståelsen, datamodellen
 og forretningsreglerne, men ingen kode. Projektet laves af én person.
 
@@ -204,8 +205,8 @@ bevidst betalt.
 | **Optimistisk låsning** | Pessimistisk lås med `SELECT FOR UPDATE` | En pessimistisk lås beskytter kun inde i Java. Den fanger ikke, at klienten handlede på et forældet billede, hentet to netværkshop væk |
 | **Regler i Java** | Regler i C#, eller dubleret begge steder | Én kilde til sandhed. Dubleres tabellen, driver de to fra hinanden |
 
-Jeg har dokumentation for et kørende system i samme domæne, bygget serverløst
-på Cloudflare. Dets kendte begrænsninger, blandt andet manglende interaktive
+Jeg har gennem ZNG dokumentation for et kørende system i samme domæne, bygget
+serverløst på Cloudflare. Dets kendte begrænsninger, blandt andet manglende interaktive
 transaktioner, bruges i rapporten som alternativer med målte konsekvenser i
 stedet for hypoteser.
 
