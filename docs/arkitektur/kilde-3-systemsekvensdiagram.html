@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Systemsekvensdiagram</title>
+<style>
+  @page { margin: 15mm 14mm; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #1a1a1a; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 3px 0; }
+  h2 { font-size: 12pt; margin: 16px 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 3px; break-after: avoid; }
+  h3 { font-size: 10.5pt; margin: 12px 0 4px 0; break-after: avoid; }
+  .meta { color: #555; font-size: 9pt; margin-bottom: 12px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 12px 0; font-size: 9pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th, td { border: 1px solid #bbb; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eee; font-weight: 600; }
+  .mermaid { margin: 8px 0 12px 0; text-align: center; break-inside: avoid; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .note { background: #f5f5f5; border-left: 3px solid #777; padding: 7px 11px; margin: 10px 0; font-size: 9pt; }
+  .pagebreak { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>Systemsekvensdiagram</h1>
+<div class="meta">
+  Leveringsplanlægger &middot; SEP3, VIA University College, 3. semester, efterår 2026<br>
+  Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26 &middot; Virksomhed: ZNG<br>
+  Del 3 af 3 &middot; 28. september 2026
+</div>
+
+<div class="note">
+  Systemet er tegnet som <b>én black box</b>. Diagrammerne viser kun, hvad aktøren sender ind, og hvad systemet svarer tilbage, og i hvilken rækkefølge. De viser bevidst ikke, at systemet indeni består af en klient, to servere og en database. Den opdeling står i del 1.
+</div>
+
+<h2>Diagram 1: Chaufføren gennemfører en levering</h2>
+
+<p style="font-size:9.5pt; margin:4px 0 8px 0;">Hovedforløbet. Chaufføren arbejder fra sin telefon og flytter ordren gennem statusforløbet.</p>
+
+<div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor C as Chauffør
+    participant S as Leveringsplanlægger
+    C->>S: log ind (brugernavn, adgangskode)
+    S-->>C: adgang givet, rolle chauffør
+    C->>S: hent mine leveringer for i dag
+    S-->>C: liste over ordrer med adresse, tidsvindue og status
+    C->>S: marker ordre som hentet på lageret
+    S-->>C: ny status hentet, hændelse registreret
+    C->>S: marker ordre som undervejs
+    S-->>C: ny status undervejs, hændelse registreret
+    alt Leveringen lykkes
+        C->>S: marker ordre som leveret (modtagers navn)
+        S-->>C: ny status leveret, leveringsbevis gemt
+    else Ingen er hjemme
+        C->>S: marker ordre som mislykket (årsag)
+        S-->>C: ny status mislykket, forsøget er talt med
+    end
+</div>
+
+<h2 class="pagebreak">Diagram 2: Disponenten opretter og tildeler en ordre</h2>
+
+<p style="font-size:9.5pt; margin:4px 0 8px 0;">Forløbet før chaufførens. Det viser de to regler, systemet håndhæver: lagertjekket og kravet om, at chaufføren skal høre til ordrens eget lager.</p>
+
+<div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor D as Disponent
+    participant S as Leveringsplanlægger
+    D->>S: log ind (brugernavn, adgangskode)
+    S-->>D: adgang givet, rolle disponent
+    D->>S: opret ordre (kunde, lager, varelinjer, tidsvindue, adresse)
+    alt Der er varer nok på lageret
+        S-->>D: ordren er oprettet, status afventer
+    else Beholdningen er for lav
+        S-->>D: afvist, der er ikke varer nok på lageret
+    end
+    D->>S: hent chauffører på ordrens lager
+    S-->>D: liste over chauffører med antal ordrer i dag
+    D->>S: tildel chauffør til ordre
+    S-->>D: ordren er tildelt, status tildelt, hændelse registreret
+    D->>S: hent dashboard
+    S-->>D: utildelte ordrer, forsinkede ordrer, belastning pr. chauffør
+</div>
+
+<h2>Hvad diagrammerne viser</h2>
+
+<table>
+  <tr><th style="width:22%">Element</th><th>Betydning</th></tr>
+  <tr><td><b>Aktør</b><br>figuren yderst til venstre</td><td>Mennesket der bruger systemet. Her chaufføren og disponenten. Kunden er ikke aktør, fordi kunden ikke bruger systemet</td></tr>
+  <tr><td><b>Systemet</b><br>kassen til højre</td><td>Hele Leveringsplanlæggeren som én enhed. Det er det, black box betyder</td></tr>
+  <tr><td><b>Fuldt optrukken pil</b></td><td>En systemhandling, altså noget aktøren beder systemet om</td></tr>
+  <tr><td><b>Stiplet pil</b></td><td>Systemets svar tilbage til aktøren</td></tr>
+  <tr><td><b>alt og else</b></td><td>Et sted hvor forløbet deler sig. Kun den ene gren sker ad gangen</td></tr>
+  <tr><td><b>Numrene</b></td><td>Rækkefølgen. Tiden går nedad</td></tr>
+</table>
+
+<h2>Systemhandlingerne, der følger af diagrammerne</h2>
+
+<p style="font-size:9.5pt; margin:4px 0 8px 0;">Hver fuldt optrukken pil bliver til ét kald i den færdige løsning. Listen er derfor også udgangspunktet for REST-kontrakten og for .proto-filen.</p>
+
+<table>
+  <tr><th style="width:30%">Systemhandling</th><th style="width:16%">Aktør</th><th>Hvad systemet skal afgøre</th></tr>
+  <tr><td>log ind</td><td>begge</td><td>Findes brugeren, er den aktiv, og hvilken rolle har den</td></tr>
+  <tr><td>hent mine leveringer</td><td>chauffør</td><td>Kun ordrer tildelt netop denne chauffør må returneres</td></tr>
+  <tr><td>skift status på ordre</td><td>chauffør</td><td>Er skiftet lovligt fra den nuværende status, og er det den rette chauffør, der beder om det</td></tr>
+  <tr><td>marker som leveret</td><td>chauffør</td><td>Modtagerens navn skal registreres sammen med statusskiftet</td></tr>
+  <tr><td>marker som mislykket</td><td>chauffør</td><td>Årsag registreres, og forsøget tælles med, uden at historikken går tabt</td></tr>
+  <tr><td>opret ordre</td><td>disponent</td><td>Er der varer nok på det valgte lager til alle varelinjer</td></tr>
+  <tr><td>hent chauffører på lager</td><td>disponent</td><td>Kun aktive chauffører, der hører til ordrens eget lager</td></tr>
+  <tr><td>tildel chauffør</td><td>disponent</td><td>Samme lagerregel, og ordren må ikke være ændret af andre i mellemtiden</td></tr>
+  <tr><td>hent dashboard</td><td>disponent</td><td>Utildelte, forsinkede og belastning pr. chauffør på tværs af lagre</td></tr>
+</table>
+
+<div class="note">
+  Alle afgørelserne i højre kolonne træffes i <b>domæneserveren i Java</b>, i samme transaktion som skrivningen. Brugerfladen viser kun de knapper, serveren har sagt ja til, men serveren tjekker igen, inden den skriver. Det er derfor reglerne ikke kan omgås ved at kalde uden om brugerfladen.
+</div>
+
+</body>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "neutral", fontFamily: "Helvetica, Arial, sans-serif", sequence: { useMaxWidth: true, actorMargin: 220, width: 200, mirrorActors: false, messageFontSize: 13, noteFontSize: 12 } });
+  await mermaid.run();
+  window.mermaidDone = true;
+</script>
+</html>

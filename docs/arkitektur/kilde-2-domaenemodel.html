@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Konceptuel domænemodel</title>
+<style>
+  @page { margin: 15mm 14mm; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #1a1a1a; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 3px 0; }
+  h2 { font-size: 12pt; margin: 18px 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 3px; break-after: avoid; }
+  .meta { color: #555; font-size: 9pt; margin-bottom: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 12px 0; font-size: 9pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th, td { border: 1px solid #bbb; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eee; font-weight: 600; }
+  .mermaid { margin: 10px 0 14px 0; text-align: center; break-inside: avoid; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .note { background: #f5f5f5; border-left: 3px solid #777; padding: 7px 11px; margin: 10px 0; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>Konceptuel domænemodel</h1>
+<div class="meta">
+  Leveringsplanlægger &middot; SEP3, VIA University College, 3. semester, efterår 2026<br>
+  Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26 &middot; Virksomhed: ZNG<br>
+  Del 2 af 3 &middot; 28. september 2026
+</div>
+
+<div class="mermaid">
+flowchart TB
+    KUNDE["<b>Kunde</b><br/>navn<br/>kundetype<br/>adresse<br/>kontaktoplysning"]
+    ORDRE["<b>Ordre</b><br/>ordrenummer<br/>oprettet<br/>leveringsvindue<br/>leveringsadresse<br/>status<br/>modtagers navn"]
+    VARELINJE["<b>Varelinje</b><br/>antal"]
+    VARE["<b>Vare</b><br/>varenummer<br/>betegnelse"]
+    LAGER["<b>Lager</b><br/>navn<br/>adresse"]
+    BEHOLDNING["<b>Beholdning</b><br/>antal på lager"]
+    BRUGER["<b>Bruger</b><br/>navn<br/>rolle<br/>aktiv"]
+    HAENDELSE["<b>Hændelse</b><br/>tidspunkt<br/>fra status<br/>til status<br/>bemærkning"]
+
+    KUNDE ---|"1 afgiver 0..*"| ORDRE
+    LAGER ---|"1 leverer fra 0..*"| ORDRE
+    BRUGER ---|"0..1 er tildelt 0..*"| ORDRE
+    LAGER ---|"1 er arbejdssted for 0..*"| BRUGER
+    ORDRE ---|"1 består af 1..*"| VARELINJE
+    VARE ---|"1 optræder på 0..*"| VARELINJE
+    LAGER ---|"1 har 0..*"| BEHOLDNING
+    VARE ---|"1 opgøres i 0..*"| BEHOLDNING
+    ORDRE ---|"1 har historik 1..*"| HAENDELSE
+    BRUGER ---|"1 udfører 0..*"| HAENDELSE
+
+    classDef ent fill:#eef2f7,stroke:#33506e,stroke-width:1.3px,text-align:left;
+    class KUNDE,ORDRE,VARELINJE,VARE,LAGER,BEHOLDNING,BRUGER,HAENDELSE ent;
+</div>
+
+<div class="note">
+  Modellen viser <b>forretningsbegreber og deres indbyrdes forhold</b>, ikke klasser. Der er derfor ingen datatyper, ingen metoder, ingen nøgler og ingen teknologi. Tallene på stregerne er antal, for eksempel betyder "1 afgiver 0..*", at én kunde kan have fra ingen til mange ordrer, og at en ordre altid hører til præcis én kunde.
+</div>
+
+<h2>Begreberne</h2>
+
+<table>
+  <tr><th style="width:17%">Begreb</th><th>Hvad det er i forretningen</th></tr>
+  <tr><td><b>Kunde</b></td><td>Den der modtager varen. Kundetypen er privat husstand, byggeplads eller virksomhed, og den afgør, hvilket leveringsvindue og hvilke kontaktoplysninger der giver mening. Kunden er ikke bruger af systemet</td></tr>
+  <tr><td><b>Ordre</b></td><td>Én levering til én kunde fra ét lager. Ordren bærer sin status gennem hele forløbet fra afventer til leveret eller annulleret</td></tr>
+  <tr><td><b>Varelinje</b></td><td>Én vare i et bestemt antal på en bestemt ordre. To vaskemaskiner og ét køleskab er to varelinjer</td></tr>
+  <tr><td><b>Vare</b></td><td>Et produkt i sortimentet, uafhængigt af lager og ordre</td></tr>
+  <tr><td><b>Lager</b></td><td>Et fysisk sted, varer sendes fra, og som chauffører er tilknyttet</td></tr>
+  <tr><td><b>Beholdning</b></td><td>Hvor mange styk af en bestemt vare der står på et bestemt lager. Begrebet findes, fordi den samme vare kan ligge i forskelligt antal på forskellige lagre</td></tr>
+  <tr><td><b>Bruger</b></td><td>En medarbejder med en rolle, enten disponent eller chauffør. En chauffør hører til ét lager. En bruger kan sættes inaktiv, og adgangen lukkes da med det samme</td></tr>
+  <tr><td><b>Hændelse</b></td><td>Én ændring i en ordres liv: hvem gjorde hvad hvornår. Hændelser kan ikke rettes eller slettes, og det er dem, der gør ansvaret sporbart</td></tr>
+</table>
+
+<h2>Forholdene mellem begreberne</h2>
+
+<table>
+  <tr><th style="width:30%">Forhold</th><th style="width:16%">Antal</th><th>Læses som</th></tr>
+  <tr><td>Kunde og Ordre</td><td>1 til 0..*</td><td>En kunde kan have mange ordrer. En ordre hører altid til præcis én kunde</td></tr>
+  <tr><td>Lager og Ordre</td><td>1 til 0..*</td><td>En ordre leveres fra præcis ét lager</td></tr>
+  <tr><td>Bruger og Ordre</td><td>0..1 til 0..*</td><td>En ordre kan være utildelt. Er den tildelt, er det til præcis én chauffør</td></tr>
+  <tr><td>Lager og Bruger</td><td>1 til 0..*</td><td>En chauffør hører til ét lager. Derfor kan en ordre kun tildeles en chauffør fra ordrens eget lager</td></tr>
+  <tr><td>Ordre og Varelinje</td><td>1 til 1..*</td><td>En ordre har mindst én varelinje. En tom ordre giver ingen mening</td></tr>
+  <tr><td>Vare og Varelinje</td><td>1 til 0..*</td><td>Den samme vare kan optræde på mange ordrer</td></tr>
+  <tr><td>Lager og Beholdning<br>Vare og Beholdning</td><td>1 til 0..*</td><td>Beholdning binder en vare til et lager med et antal. Det er den, der gør lagertjekket muligt ved oprettelse af en ordre</td></tr>
+  <tr><td>Ordre og Hændelse</td><td>1 til 1..*</td><td>Enhver ordre har mindst én hændelse, nemlig oprettelsen</td></tr>
+  <tr><td>Bruger og Hændelse</td><td>1 til 0..*</td><td>Enhver hændelse har en aktør. Det er dét, der placerer ansvaret</td></tr>
+</table>
+
+</body>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "neutral", fontFamily: "Helvetica, Arial, sans-serif", flowchart: { htmlLabels: true, useMaxWidth: true, wrappingWidth: 260, rankSpacing: 55, nodeSpacing: 45 } });
+  await mermaid.run();
+  window.mermaidDone = true;
+</script>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Systemarkitektur</title>
+<style>
+  @page { margin: 15mm 14mm; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.45; color: #1a1a1a; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 3px 0; }
+  h2 { font-size: 12pt; margin: 18px 0 6px 0; border-bottom: 1px solid #ccc; padding-bottom: 3px; break-after: avoid; }
+  .meta { color: #555; font-size: 9pt; margin-bottom: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 12px 0; font-size: 9pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th, td { border: 1px solid #bbb; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eee; font-weight: 600; }
+  .mermaid { margin: 10px 0 14px 0; text-align: center; break-inside: avoid; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .note { background: #f5f5f5; border-left: 3px solid #777; padding: 7px 11px; margin: 10px 0; font-size: 9pt; }
+  ul { margin: 4px 0 10px 0; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Systemarkitektur</h1>
+<div class="meta">
+  Leveringsplanlægger &middot; SEP3, VIA University College, 3. semester, efterår 2026<br>
+  Abdirahman Isse Ibrahim Mahamed, studienummer 364963, TS-SEP3-A26 &middot; Virksomhed: ZNG<br>
+  Del 1 af 3 &middot; 28. september 2026
+</div>
+
+<div class="mermaid">
+flowchart TB
+    K["<b>Klient</b><br/>C#, Blazor WebAssembly<br/>Kører i brugerens browser"]
+    A["<b>App-server</b><br/>C#, ASP.NET Core<br/>REST-API, session, validering"]
+    D["<b>Domæneserver</b><br/>Java, Spring Boot<br/>Regler, statusmaskine, audit-log"]
+    DB[("<b>Database</b><br/>PostgreSQL")]
+    K <== "REST over HTTPS, JSON" ==> A
+    A <== "gRPC over HTTP/2, protobuf<br/>SERVER TIL SERVER" ==> D
+    D <== "JPA og JDBC, SQL" ==> DB
+    classDef cs fill:#dfe8f5,stroke:#33506e,stroke-width:1.5px;
+    classDef java fill:#f3e4d5,stroke:#7a5330,stroke-width:1.5px;
+    classDef db fill:#e6e6e6,stroke:#555,stroke-width:1.5px;
+    class K,A cs;
+    class D java;
+    class DB db;
+</div>
+
+<h2>Hvordan kommunikationen realiseres, og hvilke teknologier der bruges hvor</h2>
+
+<table>
+  <tr>
+    <th style="width:24%">Forbindelse</th>
+    <th style="width:20%">Teknologi</th>
+    <th>Sådan realiseres den, og hvorfor netop den</th>
+  </tr>
+  <tr>
+    <td><b>Klient til app-server</b><br>Browser mod C#</td>
+    <td>REST over HTTPS, data som JSON</td>
+    <td>Klienten er en selvstændig proces i browseren og kalder navngivne ressourcer med GET, POST, PUT og DELETE. Svarene er JSON. REST er valgt, fordi kaldene er få og faste, og fordi browseren taler HTTP i forvejen uden ekstra bibliotek. Sessionen bæres af en cookie, der signeres med HMAC af app-serveren.</td>
+  </tr>
+  <tr>
+    <td><b>App-server til domæneserver</b><br>C# mod Java<br><i>server til server</i></td>
+    <td>gRPC over HTTP/2, data som protobuf</td>
+    <td>Kontrakten skrives først i en .proto-fil, og klientkode til C# og serverkode til Java genereres ud fra den samme fil. De to sprog kan derfor ikke blive uenige om formatet. Kaldene er synkrone forespørgsler med svar, og protobuf er binært og fylder mindre end JSON. Domæneserverens port er kun åben på det interne netværk, så al adgang til data går gennem app-serveren.</td>
+  </tr>
+  <tr>
+    <td><b>Domæneserver til database</b></td>
+    <td>JPA over JDBC, SQL</td>
+    <td>Kun domæneserveren rører databasen. JPA giver interaktive transaktioner, så en statusændring, en lagerkontrol og en linje i audit-loggen skrives i samme transaktion. Optimistisk låsning håndhæves med en versionskolonne på ordren.</td>
+  </tr>
+</table>
+
+<h2>Server til server, og hvorfor systemet er delt i to</h2>
+
+<ul>
+  <li><b>App-serveren</b> ejer det brugervendte: login, sessioner, rate limit på login, validering af input og de tal, dashboardet viser. Den ejer ingen forretningsregler.</li>
+  <li><b>Domæneserveren</b> ejer databasen og alle regler: hvilke statusskift der er lovlige, hvem der må udføre dem, om der er varer nok på lageret, og hvad der skrives i audit-loggen. Reglerne findes kun her.</li>
+  <li>Fordi domæneserveren ikke er tilgængelig udefra, kan reglerne ikke omgås ved at kalde uden om brugerfladen. Det er kravet om <b>server til server</b> opfyldt med en begrundelse, ikke bare et ekstra led.</li>
+</ul>
+
+<div class="note">
+  <b>To netværksteknologier.</b> Kravet er opfyldt af REST mellem browser og C#, og gRPC mellem C# og Java. SignalR indgik i projektbeskrivelsen som et tillæg til live-opdatering, men er taget ud efter vejleders anbefaling den 26. september. Dashboardet opdaterer sig i stedet ved at hente ændringer med faste mellemrum over REST.
+</div>
+
+<h2>Hvad hver del er bygget af</h2>
+
+<table>
+  <tr><th style="width:24%">Del</th><th style="width:26%">Teknologi</th><th>Ansvar</th></tr>
+  <tr><td>Klient</td><td>C#, Blazor WebAssembly</td><td>To visninger i én app: dashboard til disponenten på desktop og en visning til chaufføren på telefon, hvor et statusskift kræver højst to tryk</td></tr>
+  <tr><td>App-server</td><td>C#, ASP.NET Core</td><td>REST-kontrakt, session-cookie med HMAC, rate limit på login, validering, aggregering af dashboard-tal, gRPC-klient</td></tr>
+  <tr><td>Domæneserver</td><td>Java, Spring Boot, gRPC, JPA</td><td>Statusmaskine med syv tilstande, ejerskabstjek, lagerregler, audit-log, transaktioner og optimistisk låsning</td></tr>
+  <tr><td>Database</td><td>PostgreSQL</td><td>Kunder, lagre, varer, beholdning, ordrer, varelinjer, brugere, sessioner og hændelser</td></tr>
+</table>
+
+</body>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "neutral", fontFamily: "Helvetica, Arial, sans-serif", flowchart: { htmlLabels: true, useMaxWidth: true, wrappingWidth: 320, rankSpacing: 45, nodeSpacing: 40 } });
+  await mermaid.run();
+  window.mermaidDone = true;
+</script>
+</html>
