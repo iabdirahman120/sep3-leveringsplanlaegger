@@ -38,6 +38,18 @@ public class GrpcServerLifecycle implements SmartLifecycle {
             throw new IllegalStateException("Kunne ikke starte gRPC på port " + port, e);
         }
         log.info("gRPC-server lytter på port {}", port);
+
+        // Uden web-server har JVM'en ingen tråd der holder den i live.
+        // Denne tråd venter, til gRPC-serveren lukkes.
+        Thread awaiter = new Thread(() -> {
+            try {
+                server.awaitTermination();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "grpc-awaiter");
+        awaiter.setDaemon(false);
+        awaiter.start();
     }
 
     @Override
