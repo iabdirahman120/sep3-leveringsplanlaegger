@@ -38,3 +38,6 @@ docker/pgdata/
 
 # ZNG-materiale. Ligger kun lokalt i ~/Downloads/sep3-reference-lokal
 reference/
+
+# Lokale noter
+CLAUDE.md
