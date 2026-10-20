@@ -1,0 +1,33 @@
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 2rem;
+    color: #1f2933;
+    background: #f7f7f5;
+}
+
+h1 { margin-bottom: 0.25rem; }
+.hint { color: #616e7c; font-size: 0.9rem; }
+
+@media (max-width: 600px) { body { margin: 1rem; } }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e4e7eb; }
+th { font-size: 0.8rem; text-transform: uppercase; color: #616e7c; }
+tr.selected { background: #eef4ff; }
+
+button { padding: 0.35rem 0.8rem; margin: 0.15rem; border: 1px solid #9aa5b1; background: #fff; border-radius: 4px; cursor: pointer; }
+button.primary { background: #2f5aa8; color: #fff; border-color: #2f5aa8; }
+select { padding: 0.35rem; }
+
+.panel { margin-top: 1.5rem; padding: 1rem 1.25rem; background: #fff; border: 1px solid #e4e7eb; border-radius: 6px; }
+.message { padding: 0.6rem 0.9rem; margin: 1rem 0; border-radius: 4px; }
+.message.ok { background: #e3f6e8; color: #1e6b34; }
+.message.error { background: #fde8e8; color: #9b1c1c; }
+
+.status { font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 10px; background: #e4e7eb; }
+.status-delivered { background: #d9f2e1; }
+.status-failed, .status-cancelled { background: #fbdcdc; }
+.status-in_transit, .status-picked_up { background: #fff2cc; }
+
+#blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem; background: #fde8e8; }
+#blazor-error-ui .dismiss { cursor: pointer; float: right; }

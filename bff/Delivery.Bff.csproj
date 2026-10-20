@@ -14,11 +14,16 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Kontrakten i proto/ er kilden. C#-klienten genereres ved hvert build. -->
     <Protobuf Include="..\proto\delivery.proto" GrpcServices="Client" Link="Protos\delivery.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\client\Delivery.Client.csproj" />
   </ItemGroup>
 
 </Project>

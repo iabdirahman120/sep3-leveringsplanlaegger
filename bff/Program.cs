@@ -13,6 +13,16 @@ builder.Services.AddProblemDetails();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+// App-serveren hoster Blazor-klienten, så browseren kun taler med én adresse.
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebAssemblyDebugging();
+}
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
 app.MapOrderEndpoints();
+app.MapFallbackToFile("index.html");
 
 app.Run();
