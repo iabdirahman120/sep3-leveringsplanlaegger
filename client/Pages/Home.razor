@@ -5,28 +5,27 @@
 
 <PageTitle>Leveringsplanlægger</PageTitle>
 
-<section class="context">
-    <div class="context-text">
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow">Hvidevareforhandler med flere lagre</span>
         <h1>Leveringer på tværs af lagre</h1>
         <p>
-            En forhandler af hvidevarer leverer fra flere lagre med egne chauffører.
-            I dag koordineres det i delte To Do-lister med én afkrydsning pr. levering.
-            Leveringsplanlæggeren samler ordrerne ét sted, og reglerne for hvem der må flytte
-            en ordre håndhæves på serveren, så de ikke kan omgås.
+            I dag koordineres leveringerne i delte To Do-lister. Leveringsplanlæggeren samler ordrerne ét sted,
+            og reglerne for hvem der må flytte en ordre håndhæves på serveren, så de ikke kan omgås.
         </p>
     </div>
     <ul class="problems">
         <li>
-            <strong>Ingen historik</strong>
-            <span>En mislykket levering oprettes bare igen, og forsøget forsvinder.</span>
+            <span class="problem-icon" aria-hidden="true">1</span>
+            <div><strong>Ingen historik</strong><span>En mislykket levering oprettes bare igen, og forsøget forsvinder.</span></div>
         </li>
         <li>
-            <strong>Intet ejerskab</strong>
-            <span>Ingen kan se, hvem der flyttede en ordre og hvornår.</span>
+            <span class="problem-icon" aria-hidden="true">2</span>
+            <div><strong>Intet ejerskab</strong><span>Ingen kan se, hvem der flyttede en ordre og hvornår.</span></div>
         </li>
         <li>
-            <strong>Intet overblik</strong>
-            <span>En forsinkelse opdages først, når kunden ringer.</span>
+            <span class="problem-icon" aria-hidden="true">3</span>
+            <div><strong>Intet overblik</strong><span>En forsinkelse opdages først, når kunden ringer.</span></div>
         </li>
     </ul>
 </section>
@@ -41,21 +40,14 @@
     </ol>
 </details>
 
-@if (message is not null)
+@if (selected is null)
 {
-    <div class="notice @(messageIsError ? "notice-error" : "notice-ok")" role="status">
-        <div class="notice-title">@messageTitle</div>
-        <div class="notice-body">@message</div>
-        @if (messageDetail is not null)
-        {
-            <div class="notice-detail">@messageDetail</div>
-        }
-    </div>
+    @NoticeView
 }
 
 @if (orders is null)
 {
-    <p class="muted">Henter leveringer...</p>
+    <p class="muted loading">Henter leveringer...</p>
 }
 else if (orders.Count == 0)
 {
@@ -66,66 +58,92 @@ else if (orders.Count == 0)
 }
 else
 {
-    <div class="summary">
-        @foreach (var group in orders.GroupBy(o => o.Status).OrderBy(g => Array.IndexOf(AllStatuses, g.Key)))
+    <nav class="tiles" aria-label="Filtrér efter status">
+        <button class="tile @(filter is null ? "active" : "")" @onclick="() => filter = null">
+            <span class="tile-count">@orders.Count</span>
+            <span class="tile-label">Alle</span>
+        </button>
+        @foreach (var status in AllStatuses)
         {
-            <div class="summary-item">
-                <span class="summary-count">@group.Count()</span>
-                <span class="status status-@group.Key.ToLowerInvariant()">@Label(group.Key)</span>
-            </div>
+            var count = orders.Count(o => o.Status == status);
+            <button class="tile tile-@status.ToLowerInvariant() @(filter == status ? "active" : "") @(count == 0 ? "zero" : "")"
+                    @onclick="() => filter = filter == status ? null : status">
+                <span class="tile-count">@count</span>
+                <span class="tile-label"><span class="dot"></span>@Label(status)</span>
+            </button>
         }
-    </div>
+    </nav>
 
     <div class="layout @(selected is not null ? "has-selection" : "")">
-        <div class="card list">
+        <section class="card list">
             <div class="card-head">
                 <h2>Leveringer</h2>
-                <span class="muted">@orders.Count ordrer</span>
+                <span class="muted small">@Visible.Count af @orders.Count ordrer</span>
             </div>
-            <table class="orders">
-                <thead>
-                    <tr>
-                        <th>Kunde</th>
-                        <th>Vare</th>
-                        <th>Lager</th>
-                        <th>Leveringsvindue</th>
-                        <th>Status</th>
-                        <th class="num">Version</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var order in orders)
-                    {
-                        <tr class="@(order.Id == selected?.Id ? "selected" : "")" @onclick="() => Select(order)">
-                            <td data-label="Kunde" class="strong">@order.Customer</td>
-                            <td data-label="Vare">@order.Product</td>
-                            <td data-label="Lager">@order.WarehouseId</td>
-                            <td data-label="Vindue">@FormatWindow(order)</td>
-                            <td data-label="Status"><span class="status status-@order.Status.ToLowerInvariant()">@Label(order.Status)</span></td>
-                            <td data-label="Version" class="num">@order.Version</td>
-                            <td class="action">
-                                <button class="btn btn-ghost" @onclick="() => Select(order)" @onclick:stopPropagation>Åbn</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+
+            @if (Visible.Count == 0)
+            {
+                <p class="muted list-empty">Ingen ordrer med status @Label(filter!).</p>
+            }
+
+            <ul class="rows">
+                @foreach (var order in Visible)
+                {
+                    <li class="row @(order.Id == selected?.Id ? "selected" : "")" @onclick="() => Select(order)">
+                        <span class="avatar avatar-@order.Status.ToLowerInvariant()" aria-hidden="true">@(order.Product[..1])</span>
+                        <div class="row-main">
+                            <div class="row-title">
+                                <span class="strong">@order.Customer</span>
+                                <span class="status status-@order.Status.ToLowerInvariant()">@Label(order.Status)</span>
+                            </div>
+                            <div class="row-meta">
+                                <span>@order.Product</span>
+                                <span class="sep">·</span>
+                                <span>@Warehouse(order.WarehouseId)</span>
+                            </div>
+                            <div class="row-time">@FormatWindow(order)</div>
+                        </div>
+                        <span class="version" title="Version">v@(order.Version)</span>
+                        <button class="btn btn-ghost" @onclick="() => Select(order)" @onclick:stopPropagation>Åbn</button>
+                    </li>
+                }
+            </ul>
+        </section>
 
         @if (selected is not null)
         {
+            <div class="sheet-backdrop" @onclick="Close"></div>
             <aside class="card detail">
-                <div class="card-head">
-                    <h2>@selected.Customer</h2>
+                <div class="detail-head">
+                    <div>
+                        <span class="eyebrow">Levering</span>
+                        <h2>@selected.Customer</h2>
+                    </div>
                     <button class="btn btn-ghost" @onclick="Close">Luk</button>
                 </div>
+
+                @NoticeView
+
+                <div class="detail-status">
+                    <span class="status status-lg status-@selected.Status.ToLowerInvariant()">@Label(selected.Status)</span>
+                    <span class="version" title="Version">Version @selected.Version</span>
+                </div>
+
+                <ol class="steps">
+                    @foreach (var step in Flow)
+                    {
+                        <li class="step @StepClass(step)"><span class="step-dot"></span>@Label(step)</li>
+                    }
+                </ol>
+                @if (selected.Status is "FAILED" or "CANCELLED")
+                {
+                    <p class="muted small off-flow">Ordren er @(Label(selected.Status).ToLowerInvariant()) og står uden for den normale rute.</p>
+                }
+
                 <dl class="facts">
-                    <dt>Vare</dt><dd>@selected.Product</dd>
-                    <dt>Lager</dt><dd>@selected.WarehouseId</dd>
-                    <dt>Vindue</dt><dd>@FormatWindow(selected)</dd>
-                    <dt>Status</dt><dd><span class="status status-@selected.Status.ToLowerInvariant()">@Label(selected.Status)</span></dd>
-                    <dt>Version</dt><dd>@selected.Version</dd>
+                    <div><dt>Vare</dt><dd>@selected.Product</dd></div>
+                    <div><dt>Lager</dt><dd>@Warehouse(selected.WarehouseId)</dd></div>
+                    <div><dt>Vindue</dt><dd>@FormatWindow(selected)</dd></div>
                 </dl>
 
                 <h3>Næste skridt</h3>
@@ -139,7 +157,7 @@ else
                     <div class="actions">
                         @foreach (var status in allowed)
                         {
-                            <button class="btn btn-primary" @onclick="() => Move(status)">@Label(status)</button>
+                            <button class="btn btn-move btn-@status.ToLowerInvariant()" @onclick="() => Move(status)">@Label(status)</button>
                         }
                     </div>
                 }
@@ -154,7 +172,7 @@ else
                                 <option value="@status">@Label(status)</option>
                             }
                         </select>
-                        <button class="btn" @onclick="() => Move(manualStatus)">Send</button>
+                        <button class="btn btn-dark" @onclick="() => Move(manualStatus)">Send</button>
                     </div>
                 </div>
             </aside>
@@ -177,7 +195,12 @@ else
         ["CANCELLED"] = "Annulleret",
     };
 
+    // Kun til visning af tidslinjen. Hvilke skift der er lovlige, afgør Java.
+    private static readonly string[] Flow =
+        ["PENDING", "ASSIGNED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
+
     private List<OrderDto>? orders;
+    private string? filter;
     private OrderDto? selected;
     private List<string> allowed = [];
     private string manualStatus = "DELIVERED";
@@ -241,6 +264,42 @@ else
             messageIsError = true;
         }
         await Reload();
+    }
+
+    private RenderFragment NoticeView => __builder =>
+    {
+        if (message is not null)
+        {
+            <div class="notice @(messageIsError ? "notice-error" : "notice-ok")" role="status">
+                <span class="notice-icon" aria-hidden="true">@(messageIsError ? "!" : "✓")</span>
+                <div class="notice-content">
+                    <div class="notice-title">@messageTitle</div>
+                    <div class="notice-body">@message</div>
+                    @if (messageDetail is not null)
+                    {
+                        <code class="notice-detail">@messageDetail</code>
+                    }
+                </div>
+                <button class="notice-close" @onclick="() => message = null" aria-label="Luk besked">×</button>
+            </div>
+        }
+    };
+
+    private List<OrderDto> Visible =>
+        orders is null ? [] : orders.Where(o => filter is null || o.Status == filter).ToList();
+
+    private string StepClass(string step)
+    {
+        var current = Array.IndexOf(Flow, selected?.Status);
+        var index = Array.IndexOf(Flow, step);
+        if (current < 0) return "";
+        return index < current ? "done" : index == current ? "current" : "";
+    }
+
+    private static string Warehouse(string id)
+    {
+        var name = id.StartsWith("lager-") ? id[6..] : id;
+        return name.Length == 0 ? id : char.ToUpperInvariant(name[0]) + name[1..];
     }
 
     private static string Label(string status) =>
