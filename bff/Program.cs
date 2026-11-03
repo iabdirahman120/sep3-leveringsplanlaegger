@@ -20,9 +20,21 @@ if (app.Environment.IsDevelopment())
     app.UseWebAssemblyDebugging();
 }
 app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+// Browseren skal spørge efter ny index.html og CSS hver gang. Ellers peger en
+// gammel index.html på Blazor-filer, der ikke findes længere efter et nyt build.
+var noCache = new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.File.Name.EndsWith(".css") || ctx.File.Name == "index.html")
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache";
+        }
+    },
+};
+app.UseStaticFiles(noCache);
 
 app.MapOrderEndpoints();
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html", noCache);
 
 app.Run();
