@@ -5,40 +5,65 @@
 
 <PageTitle>Leveringsplanlægger</PageTitle>
 
-<section class="hero">
-    <div class="hero-text">
-        <span class="eyebrow">Hvidevareforhandler med flere lagre</span>
-        <h1>Leveringer på tværs af lagre</h1>
+<header class="page-head">
+    <div>
+        <p class="date">@Today</p>
+        <h1>Leveringer</h1>
+        @if (orders is not null)
+        {
+            <p class="sub">@orders.Count ordrer fordelt på @orders.Select(o => o.WarehouseId).Distinct().Count() lagre</p>
+        }
+    </div>
+    @if (orders is not null && Warehouses.Count > 1)
+    {
+        <div class="segmented" role="group" aria-label="Vælg lager">
+            <button class="@(warehouse is null ? "on" : "")" @onclick="() => warehouse = null">Alle lagre</button>
+            @foreach (var w in Warehouses)
+            {
+                <button class="@(warehouse == w ? "on" : "")" @onclick="() => warehouse = w">@Warehouse(w)</button>
+            }
+        </div>
+    }
+</header>
+
+<section class="why">
+    <div class="why-intro">
+        <span class="kicker">Hvorfor systemet findes</span>
         <p>
-            I dag koordineres leveringerne i delte To Do-lister. Leveringsplanlæggeren samler ordrerne ét sted,
-            og reglerne for hvem der må flytte en ordre håndhæves på serveren, så de ikke kan omgås.
+            En hvidevareforhandler leverer fra flere lagre med egne chauffører. I dag koordineres det i delte
+            To Do-lister. Her samles ordrerne ét sted, og reglerne for hvem der må flytte en ordre håndhæves på serveren.
         </p>
     </div>
-    <ul class="problems">
-        <li>
-            <span class="problem-icon" aria-hidden="true">1</span>
-            <div><strong>Ingen historik</strong><span>En mislykket levering oprettes bare igen, og forsøget forsvinder.</span></div>
-        </li>
-        <li>
-            <span class="problem-icon" aria-hidden="true">2</span>
+    <div class="why-problems">
+        <div class="problem">
+            <span class="problem-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 8v4l3 2" /><circle cx="12" cy="12" r="9" /></svg>
+            </span>
+            <div><strong>Ingen historik</strong><span>Et mislykket forsøg forsvinder, når leveringen oprettes igen.</span></div>
+        </div>
+        <div class="problem">
+            <span class="problem-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></svg>
+            </span>
             <div><strong>Intet ejerskab</strong><span>Ingen kan se, hvem der flyttede en ordre og hvornår.</span></div>
-        </li>
-        <li>
-            <span class="problem-icon" aria-hidden="true">3</span>
+        </div>
+        <div class="problem">
+            <span class="problem-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.5" /></svg>
+            </span>
             <div><strong>Intet overblik</strong><span>En forsinkelse opdages først, når kunden ringer.</span></div>
-        </li>
-    </ul>
+        </div>
+    </div>
+    <details class="howto">
+        <summary>Hvad proof of concept viser</summary>
+        <ol>
+            <li>Tavlen hentes gennem hele kæden: browser, REST til ASP.NET Core, gRPC til Spring Boot og PostgreSQL.</li>
+            <li>Knapperne viser kun de overgange, Javas statusmaskine tillader fra ordrens nuværende status.</li>
+            <li>Hver ændring sender ordrens version med. Har en anden planlægger ændret ordren imens, afviser serveren skrivningen.</li>
+            <li>En ulovlig overgang afvises af Java, også hvis brugerfladen omgås.</li>
+        </ol>
+    </details>
 </section>
-
-<details class="howto">
-    <summary>Hvad proof of concept viser</summary>
-    <ol>
-        <li>Listen hentes gennem hele kæden: browser, REST til ASP.NET Core, gRPC til Spring Boot og PostgreSQL.</li>
-        <li>Knapperne viser kun de overgange, Javas statusmaskine tillader fra ordrens nuværende status.</li>
-        <li>Hver ændring sender ordrens version med. Har en anden planlægger ændret ordren imens, afviser serveren skrivningen, så to planlæggere ikke overskriver hinanden.</li>
-        <li>En ulovlig overgang afvises af Java, også hvis brugerfladen omgås.</li>
-    </ol>
-</details>
 
 @if (selected is null)
 {
@@ -47,7 +72,12 @@
 
 @if (orders is null)
 {
-    <p class="muted loading">Henter leveringer...</p>
+    <div class="board">
+        @for (var i = 0; i < 4; i++)
+        {
+            <div class="column"><div class="skeleton"></div><div class="skeleton"></div></div>
+        }
+    </div>
 }
 else if (orders.Count == 0)
 {
@@ -58,126 +88,123 @@ else if (orders.Count == 0)
 }
 else
 {
-    <nav class="tiles" aria-label="Filtrér efter status">
-        <button class="tile @(filter is null ? "active" : "")" @onclick="() => filter = null">
-            <span class="tile-count">@orders.Count</span>
-            <span class="tile-label">Alle</span>
-        </button>
-        @foreach (var status in AllStatuses)
+    <div class="board">
+        @foreach (var column in Columns)
         {
-            var count = orders.Count(o => o.Status == status);
-            <button class="tile tile-@status.ToLowerInvariant() @(filter == status ? "active" : "") @(count == 0 ? "zero" : "")"
-                    @onclick="() => filter = filter == status ? null : status">
-                <span class="tile-count">@count</span>
-                <span class="tile-label"><span class="dot"></span>@Label(status)</span>
-            </button>
-        }
-    </nav>
-
-    <div class="layout @(selected is not null ? "has-selection" : "")">
-        <section class="card list">
-            <div class="card-head">
-                <h2>Leveringer</h2>
-                <span class="muted small">@Visible.Count af @orders.Count ordrer</span>
-            </div>
-
-            @if (Visible.Count == 0)
-            {
-                <p class="muted list-empty">Ingen ordrer med status @Label(filter!).</p>
-            }
-
-            <ul class="rows">
-                @foreach (var order in Visible)
-                {
-                    <li class="row @(order.Id == selected?.Id ? "selected" : "")" @onclick="() => Select(order)">
-                        <span class="avatar avatar-@order.Status.ToLowerInvariant()" aria-hidden="true">@(order.Product[..1])</span>
-                        <div class="row-main">
-                            <div class="row-title">
-                                <span class="strong">@order.Customer</span>
-                                <span class="status status-@order.Status.ToLowerInvariant()">@Label(order.Status)</span>
-                            </div>
-                            <div class="row-meta">
-                                <span>@order.Product</span>
-                                <span class="sep">·</span>
-                                <span>@Warehouse(order.WarehouseId)</span>
-                            </div>
-                            <div class="row-time">@FormatWindow(order)</div>
-                        </div>
-                        <span class="version" title="Version">v@(order.Version)</span>
-                        <button class="btn btn-ghost" @onclick="() => Select(order)" @onclick:stopPropagation>Åbn</button>
-                    </li>
-                }
-            </ul>
-        </section>
-
-        @if (selected is not null)
-        {
-            <div class="sheet-backdrop" @onclick="Close"></div>
-            <aside class="card detail">
-                <div class="detail-head">
-                    <div>
-                        <span class="eyebrow">Levering</span>
-                        <h2>@selected.Customer</h2>
-                    </div>
-                    <button class="btn btn-ghost" @onclick="Close">Luk</button>
-                </div>
-
-                @NoticeView
-
-                <div class="detail-status">
-                    <span class="status status-lg status-@selected.Status.ToLowerInvariant()">@Label(selected.Status)</span>
-                    <span class="version" title="Version">Version @selected.Version</span>
-                </div>
-
-                <ol class="steps">
-                    @foreach (var step in Flow)
+            var items = Visible.Where(o => column.Statuses.Contains(o.Status)).ToList();
+            <section class="column col-@column.Key">
+                <header class="column-head">
+                    <span class="dot"></span>
+                    <h2>@column.Title</h2>
+                    <span class="count">@items.Count</span>
+                </header>
+                <ul class="cards">
+                    @foreach (var order in items)
                     {
-                        <li class="step @StepClass(step)"><span class="step-dot"></span>@Label(step)</li>
-                    }
-                </ol>
-                @if (selected.Status is "FAILED" or "CANCELLED")
-                {
-                    <p class="muted small off-flow">Ordren er @(Label(selected.Status).ToLowerInvariant()) og står uden for den normale rute.</p>
-                }
-
-                <dl class="facts">
-                    <div><dt>Vare</dt><dd>@selected.Product</dd></div>
-                    <div><dt>Lager</dt><dd>@Warehouse(selected.WarehouseId)</dd></div>
-                    <div><dt>Vindue</dt><dd>@FormatWindow(selected)</dd></div>
-                </dl>
-
-                <h3>Næste skridt</h3>
-                <p class="muted small">Overgangene kommer fra statusmaskinen i Java.</p>
-                @if (allowed.Count == 0)
-                {
-                    <p class="muted">Ingen. Ordren er i en sluttilstand.</p>
-                }
-                else
-                {
-                    <div class="actions">
-                        @foreach (var status in allowed)
-                        {
-                            <button class="btn btn-move btn-@status.ToLowerInvariant()" @onclick="() => Move(status)">@Label(status)</button>
-                        }
-                    </div>
-                }
-
-                <div class="bypass">
-                    <h3>Test reglerne</h3>
-                    <p class="muted small">Send en vilkårlig status direkte til serveren, uden om knapperne. Java afviser den, hvis statusmaskinen ikke tillader den.</p>
-                    <div class="bypass-row">
-                        <select @bind="manualStatus" aria-label="Status der sendes">
-                            @foreach (var status in AllStatuses)
+                        <li class="card @(order.Id == selected?.Id ? "selected" : "")" @onclick="() => Select(order)">
+                            <div class="card-top">
+                                <span class="customer">@order.Customer</span>
+                                <span class="version" title="Version">v@(order.Version)</span>
+                            </div>
+                            <p class="product">@order.Product</p>
+                            <div class="card-meta">
+                                <span class="chip">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6v10H3z" /><path d="M9 20v-6h6v6" /></svg>
+                                    @Warehouse(order.WarehouseId)
+                                </span>
+                                <span class="chip">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                                    @FormatWindow(order)
+                                </span>
+                            </div>
+                            @if (column.Statuses.Length > 1)
                             {
-                                <option value="@status">@Label(status)</option>
+                                <span class="status status-@order.Status.ToLowerInvariant()">@Label(order.Status)</span>
                             }
-                        </select>
-                        <button class="btn btn-dark" @onclick="() => Move(manualStatus)">Send</button>
-                    </div>
-                </div>
-            </aside>
+                            <button class="open" @onclick="() => Select(order)" @onclick:stopPropagation>Åbn</button>
+                        </li>
+                    }
+                    @if (items.Count == 0)
+                    {
+                        <li class="none">Ingen</li>
+                    }
+                </ul>
+            </section>
         }
     </div>
+}
+
+@if (selected is not null)
+{
+    <div class="backdrop" @onclick="Close"></div>
+    <aside class="drawer" aria-label="Levering">
+        <div class="drawer-head">
+            <div>
+                <span class="kicker">@selected.Product</span>
+                <h2>@selected.Customer</h2>
+            </div>
+            <button class="icon-btn" @onclick="Close" aria-label="Luk">
+                <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </div>
+
+        @NoticeView
+
+        <div class="drawer-status">
+            <span class="status status-lg status-@selected.Status.ToLowerInvariant()">@Label(selected.Status)</span>
+            <span class="version">Version @selected.Version</span>
+        </div>
+
+        <ol class="steps">
+            @foreach (var step in Flow)
+            {
+                <li class="step @StepClass(step)"><span class="step-dot"></span><span>@Label(step)</span></li>
+            }
+        </ol>
+        @if (selected.Status is "FAILED" or "CANCELLED")
+        {
+            <p class="off-flow">Ordren er @(Label(selected.Status).ToLowerInvariant()) og står uden for den normale rute.</p>
+        }
+
+        <dl class="facts">
+            <div><dt>Vare</dt><dd>@selected.Product</dd></div>
+            <div><dt>Lager</dt><dd>@Warehouse(selected.WarehouseId)</dd></div>
+            <div><dt>Vindue</dt><dd>@FormatWindow(selected)</dd></div>
+        </dl>
+
+        <h3>Næste skridt</h3>
+        <p class="hint">Overgangene kommer fra statusmaskinen i Java.</p>
+        @if (allowed.Count == 0)
+        {
+            <p class="hint">Ingen. Ordren er i en sluttilstand.</p>
+        }
+        else
+        {
+            <div class="actions">
+                @foreach (var status in allowed)
+                {
+                    <button class="move move-@status.ToLowerInvariant()" @onclick="() => Move(status)">
+                        <span class="dot"></span>@Label(status)
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    </button>
+                }
+            </div>
+        }
+
+        <div class="bypass">
+            <h3>Test reglerne</h3>
+            <p class="hint">Send en vilkårlig status direkte til serveren, uden om knapperne. Java afviser den, hvis statusmaskinen ikke tillader den.</p>
+            <div class="bypass-row">
+                <select @bind="manualStatus" aria-label="Status der sendes">
+                    @foreach (var status in AllStatuses)
+                    {
+                        <option value="@status">@Label(status)</option>
+                    }
+                </select>
+                <button class="send" @onclick="() => Move(manualStatus)">Send</button>
+            </div>
+        </div>
+    </aside>
 }
 
 @code {
@@ -195,12 +222,28 @@ else
         ["CANCELLED"] = "Annulleret",
     };
 
-    // Kun til visning af tidslinjen. Hvilke skift der er lovlige, afgør Java.
+    // Kun til visning af tavlen og tidslinjen. Hvilke skift der er lovlige, afgør Java.
     private static readonly string[] Flow =
         ["PENDING", "ASSIGNED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
 
+    private record Column(string Key, string Title, string[] Statuses);
+
+    private static readonly Column[] Columns =
+    [
+        new("pending", "Afventer", ["PENDING"]),
+        new("assigned", "Tildelt", ["ASSIGNED"]),
+        new("picked_up", "Afhentet", ["PICKED_UP"]),
+        new("in_transit", "Undervejs", ["IN_TRANSIT"]),
+        new("delivered", "Leveret", ["DELIVERED"]),
+        new("failed", "Afvigelser", ["FAILED", "CANCELLED"]),
+    ];
+
+    private static readonly string[] Days = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+    private static readonly string[] Months =
+        ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"];
+
     private List<OrderDto>? orders;
-    private string? filter;
+    private string? warehouse;
     private OrderDto? selected;
     private List<string> allowed = [];
     private string manualStatus = "DELIVERED";
@@ -286,7 +329,19 @@ else
     };
 
     private List<OrderDto> Visible =>
-        orders is null ? [] : orders.Where(o => filter is null || o.Status == filter).ToList();
+        orders is null ? [] : orders.Where(o => warehouse is null || o.WarehouseId == warehouse).ToList();
+
+    private List<string> Warehouses =>
+        orders is null ? [] : orders.Select(o => o.WarehouseId).Distinct().Order().ToList();
+
+    private static string Today
+    {
+        get
+        {
+            var d = DateTime.Now;
+            return $"{Days[(int)d.DayOfWeek]} {d.Day}. {Months[d.Month - 1]}";
+        }
+    }
 
     private string StepClass(string step)
     {
@@ -308,6 +363,6 @@ else
     private static string FormatWindow(OrderDto order) =>
         DateTimeOffset.TryParse(order.DeliveryWindowStart, out var start)
         && DateTimeOffset.TryParse(order.DeliveryWindowEnd, out var end)
-            ? $"{start.ToLocalTime():dd/MM HH:mm} til {end.ToLocalTime():HH:mm}"
+            ? $"{start.ToLocalTime():dd/MM HH:mm}-{end.ToLocalTime():HH:mm}"
             : "";
 }
